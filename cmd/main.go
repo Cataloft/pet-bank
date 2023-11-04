@@ -9,7 +9,7 @@ func main() {
 	dbConn := postgres.New("postgres://slava:slava2000@localhost:5432/bank")
 	_ = dbConn
 
-	srv := server.New()
-	srv.Start()
+	srv := server.New(dbConn)
+	_ = srv.Start()
 
 }
