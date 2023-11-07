@@ -41,21 +41,15 @@ func RegisterUser(saveUser UserSaver) http.HandlerFunc {
 			Password: req.Password,
 		}
 
-		log.Println("request body decoded")
-
-		//req.EncryptedPassword, err = bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		//if err != nil {
-		//	log.Println("failed to hash password")
-		//	return
-		//}
-
 		err = saveUser.SaveUser(u)
 		if err != nil {
-			log.Println("failed to exec sql to db", err)
+			log.Println("failed to save user:", err)
 			return
 		}
 
-		u.Sanitize()
+		resp.Status = http.StatusCreated
+		log.Println("StatusCode", resp.Status, "CREATED")
 
+		u.Sanitize()
 	}
 }
