@@ -1,8 +1,8 @@
 package register_user
 
 import (
+	"bank-api/internal/model"
 	"github.com/go-chi/render"
-	"golang.org/x/crypto/bcrypt"
 	"log"
 	"net/http"
 )
@@ -18,7 +18,7 @@ type Response struct {
 }
 
 type UserSaver interface {
-	SaveUser(string, string, []byte) error
+	SaveUser(user *model.User) error
 }
 
 func RegisterUser(saveUser UserSaver) http.HandlerFunc {
@@ -36,18 +36,26 @@ func RegisterUser(saveUser UserSaver) http.HandlerFunc {
 			return
 		}
 
-		log.Println("request body decoded")
-
-		encryptedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
-		if err != nil {
-			log.Println("failed to hash password")
-			return
+		u := &model.User{
+			Email:    req.Email,
+			Password: req.Password,
 		}
 
-		err = saveUser.SaveUser(req.Email, req.Password, encryptedPassword)
+		log.Println("request body decoded")
+
+		//req.EncryptedPassword, err = bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+		//if err != nil {
+		//	log.Println("failed to hash password")
+		//	return
+		//}
+
+		err = saveUser.SaveUser(u)
 		if err != nil {
 			log.Println("failed to exec sql to db", err)
 			return
 		}
+
+		u.Sanitize()
+
 	}
 }

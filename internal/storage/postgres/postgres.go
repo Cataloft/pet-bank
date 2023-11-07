@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"bank-api/internal/model"
 	"context"
 	"github.com/jackc/pgx/v5"
 )
@@ -18,10 +19,17 @@ func New(dbUrl string) *Storage {
 	return &Storage{Conn: conn}
 }
 
-func (s *Storage) SaveUser(email string, password string, encryptedPassword []byte) error {
-	sqlString := "INSERT INTO public.user (email, password, encrypted_password) VALUES ($1, $2, $3)"
+func (s *Storage) SaveUser(user *model.User) error {
+	if err := user.Validate(); err != nil {
+		return err
+	}
 
-	_, err := s.Conn.Exec(context.Background(), sqlString, email, password, encryptedPassword)
+	if err := user.BeforeCreate(); err != nil {
+		return err
+	}
+
+	sqlString := "INSERT INTO public.user (email, encrypted_password) VALUES ($1, $2)"
+	_, err := s.Conn.Exec(context.Background(), sqlString, user.Email, user.EncryptedPassword)
 	if err != nil {
 		return err
 	}
