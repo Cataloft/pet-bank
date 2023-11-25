@@ -23,10 +23,12 @@ func New(dbUrl string) *Storage {
 func (s *Storage) UserExists(email string) (bool, error) {
 	var count int
 
-	sqlString := "SELECT count(*) FROM public.user where email = $1"
-	_ = s.Conn.QueryRow(context.Background(), sqlString, email).Scan(&count)
+	sqlString := "SELECT count(*) FROM public.users where email = $1"
+	row := s.Conn.QueryRow(context.Background(), sqlString, email)
+	row.Scan(&count)
+
 	if count > 0 {
-		return false, errors.New("user with this email is already registered")
+		return false, errors.New("user with this email exists")
 	}
 	return true, nil
 }
@@ -36,7 +38,7 @@ func (s *Storage) SaveUser(user *model.User) error {
 		return err
 	}
 
-	if _, err := s.UserExists(user.Email); err != nil {
+	if exist, err := s.UserExists(user.Email); !exist && err != nil {
 		return err
 	}
 
@@ -44,11 +46,21 @@ func (s *Storage) SaveUser(user *model.User) error {
 		return err
 	}
 
-	sqlString := "INSERT INTO public.user (email, encrypted_password) VALUES ($1, $2)"
-	_, err := s.Conn.Exec(context.Background(), sqlString, user.Email, user.EncryptedPassword)
+	sqlString := "INSERT INTO public.users (email, encrypted_password, full_name) VALUES ($1, $2, $3)"
+	_, err := s.Conn.Exec(context.Background(), sqlString, user.Email, user.EncryptedPassword, user.FullName)
 	if err != nil {
 		return err
 	}
 
 	return nil
+}
+
+func (s *Storage) GetUser(email string) (model.User, error) {
+	var u model.User
+	sqlString := "SELECT email, encrypted_password, created_at, full_name FROM public.users WHERE email = $1"
+
+	row := s.Conn.QueryRow(context.Background(), sqlString, email)
+	err := row.Scan(&u.Email, &u.EncryptedPassword, &u.CreatedAt, &u.FullName)
+
+	return u, err
 }

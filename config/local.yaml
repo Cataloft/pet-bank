@@ -1,0 +1,7 @@
+env: "local"
+postgres_url: "postgres://slava:slava2000@localhost:5432/bank"
+http_server:
+  address: "localhost:8080"
+  access_token_duration: 30m
+  refresh_token_duration: 168h
+  secret: "12345678901234567890123456789012"
