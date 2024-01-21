@@ -2,8 +2,8 @@ package server
 
 import (
 	"bank-api/internal/config"
-	"bank-api/internal/http-server/handlers/user/create_user"
-	"bank-api/internal/http-server/handlers/user/login_user"
+	"bank-api/internal/http-server/handlers/user/login"
+	"bank-api/internal/http-server/handlers/user/register"
 	"bank-api/internal/storage/postgres"
 	"bank-api/internal/storage/redis"
 	"github.com/go-chi/chi/v5"
@@ -15,13 +15,15 @@ import (
 type Server struct {
 	router  *chi.Mux
 	storage *postgres.Storage
-	session *redis.RefreshSession
+	session *redis.RedisClient
 	config  *config.Config
 }
 
-func New(storage *postgres.Storage, session *redis.RefreshSession, cfg *config.Config) *Server {
+func New(storage *postgres.Storage, session *redis.RedisClient, cfg *config.Config) *Server {
 	router := chi.NewRouter()
 	router.Use(middleware.Logger)
+	router.Use(middleware.RequestID)
+	router.Use(middleware.RealIP)
 
 	return &Server{
 		router:  router,
@@ -31,8 +33,8 @@ func New(storage *postgres.Storage, session *redis.RefreshSession, cfg *config.C
 	}
 }
 func (s *Server) initHandlers() {
-	s.router.HandleFunc("/user/register", create_user.CreateUser(s.storage))
-	s.router.HandleFunc("/user/login", login_user.LoginUser(s.storage, s.session, s.config))
+	s.router.Post("/auth/register", register.Register(s.storage))
+	s.router.Post("/auth/login", login.Login(s.storage, s.session, s.config))
 
 }
 

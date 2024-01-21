@@ -4,20 +4,27 @@ import (
 	"bank-api/internal/model"
 	"context"
 	"errors"
-	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgxpool"
+	"log"
 )
 
 type Storage struct {
-	Conn *pgx.Conn
+	Conn *pgxpool.Pool
 }
 
 func New(dbUrl string) *Storage {
-	conn, err := pgx.Connect(context.Background(), dbUrl)
+	poolCfg, err := pgxpool.ParseConfig(dbUrl)
 	if err != nil {
-		return nil
+		log.Fatalln("ERROR: parse db url")
 	}
 
-	return &Storage{Conn: conn}
+	connPool, err := pgxpool.NewWithConfig(context.Background(), poolCfg)
+	if err != nil {
+		log.Fatalln("ERROR: connect to db ")
+	}
+	//conn, err := pgx.Connect(context.Background(), dbUrl)
+
+	return &Storage{Conn: connPool}
 }
 
 func (s *Storage) UserExists(email string) (bool, error) {
@@ -25,11 +32,13 @@ func (s *Storage) UserExists(email string) (bool, error) {
 
 	sqlString := "SELECT count(*) FROM public.users where email = $1"
 	row := s.Conn.QueryRow(context.Background(), sqlString, email)
-	row.Scan(&count)
-
-	if count > 0 {
+	if _ = row.Scan(&count); count > 0 {
 		return false, errors.New("user with this email exists")
 	}
+	//if count > 0 {
+	//	return false, errors.New("user with this email exists")
+	//}
+
 	return true, nil
 }
 
@@ -56,11 +65,14 @@ func (s *Storage) SaveUser(user *model.User) error {
 }
 
 func (s *Storage) GetUser(email string) (model.User, error) {
-	var u model.User
+	var user model.User
 	sqlString := "SELECT email, encrypted_password, created_at, full_name FROM public.users WHERE email = $1"
 
 	row := s.Conn.QueryRow(context.Background(), sqlString, email)
-	err := row.Scan(&u.Email, &u.EncryptedPassword, &u.CreatedAt, &u.FullName)
+	err := row.Scan(&user.Email, &user.EncryptedPassword, &user.CreatedAt, &user.FullName)
+	if err != nil {
+		return model.User{}, err
+	}
 
-	return u, err
+	return user, nil
 }

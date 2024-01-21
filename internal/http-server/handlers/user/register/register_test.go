@@ -1,4 +1,4 @@
-package create_user
+package register
 
 //
 //func registerUserTest(t *testing.T) {
@@ -24,7 +24,7 @@ package create_user
 //			rec := httptest.NewRecorder()
 //			b := &bytes.Buffer{}
 //			json.NewEncoder(b).Encode(tc.payload)
-//			req, _ := http.NewRequest(http.MethodPost, "/create_user", b)
+//			req, _ := http.NewRequest(http.MethodPost, "/register", b)
 //		})
 //	}
 //}

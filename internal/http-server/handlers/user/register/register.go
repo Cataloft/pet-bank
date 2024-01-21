@@ -1,4 +1,4 @@
-package create_user
+package register
 
 import (
 	"bank-api/internal/model"
@@ -33,7 +33,7 @@ type UserSaver interface {
 
 // user UserSaver
 
-func CreateUser(userSaver UserSaver) http.HandlerFunc {
+func Register(saver UserSaver) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req Request
 		var resp Response
@@ -53,7 +53,7 @@ func CreateUser(userSaver UserSaver) http.HandlerFunc {
 			FullName: req.FullName,
 		}
 
-		if err := userSaver.SaveUser(u); err != nil {
+		if err := saver.SaveUser(u); err != nil {
 			w.WriteHeader(http.StatusInternalServerError)
 			log.Println("failed to save user:", err)
 			return
@@ -62,7 +62,6 @@ func CreateUser(userSaver UserSaver) http.HandlerFunc {
 		u.Sanitize()
 
 		w.WriteHeader(http.StatusCreated)
-		w.Write([]byte(u.Email))
 
 		log.Println(resp.Status, "CREATED")
 

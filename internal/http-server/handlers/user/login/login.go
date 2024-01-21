@@ -1,10 +1,11 @@
-package login_user
+package login
 
 import (
 	"bank-api/internal/config"
 	"bank-api/internal/model"
 	"bank-api/internal/storage/redis"
 	"bank-api/pkg/token"
+	"context"
 	"encoding/json"
 	"github.com/go-chi/render"
 	"github.com/google/uuid"
@@ -31,7 +32,7 @@ type UserGetter interface {
 	GetUser(email string) (model.User, error)
 }
 
-func LoginUser(userGetter UserGetter, refSession *redis.RefreshSession, cfg *config.Config) http.HandlerFunc {
+func Login(userGetter UserGetter, refSession *redis.RedisClient, cfg *config.Config) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		var req Request
 		if err := render.DecodeJSON(r.Body, &req); err != nil {
@@ -62,7 +63,7 @@ func LoginUser(userGetter UserGetter, refSession *redis.RefreshSession, cfg *con
 			cfg.AccessTokenDuration,
 		)
 		if err != nil {
-			log.Println("failed to create access token")
+			log.Println("failed to register access token")
 			return
 		}
 
@@ -72,11 +73,11 @@ func LoginUser(userGetter UserGetter, refSession *redis.RefreshSession, cfg *con
 			cfg.AccessTokenDuration,
 		)
 		if err != nil {
-			log.Println("failed to create refresh token")
+			log.Println("failed to register refresh token")
 			return
 		}
 
-		session, err := refSession.CreateSession(refreshPayload.ID, redis.SessionArgs{
+		session, err := refSession.CreateSession(context.Background(), refreshPayload.ID, redis.SessionArgs{
 			Email:        user.Email,
 			RefreshToken: refreshToken,
 			UserAgent:    r.UserAgent(),
@@ -85,7 +86,7 @@ func LoginUser(userGetter UserGetter, refSession *redis.RefreshSession, cfg *con
 			ExpiresAt:    refreshPayload.ExpiredAt,
 		})
 		if err != nil {
-			log.Println("failed to create session")
+			log.Println("failed to register session")
 			return
 		}
 

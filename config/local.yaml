@@ -1,5 +1,5 @@
 env: "local"
-postgres_url: "postgres://slava:slava2000@localhost:5432/bank"
+postgres_url: "postgres://slava:slava2000@localhost:5432/bank?sslmode=allow&pool_max_conns=10"
 http_server:
   address: "localhost:8080"
   access_token_duration: 30m
